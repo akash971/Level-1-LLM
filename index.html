@@ -1,0 +1,282 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>NextWord AI | Interactive Bigram Language Model Playground</title>
+  <meta name="description" content="Explore how modern Language Models predict words using this interactive, visual Next-Word Predictor playground built in pure JavaScript & Python.">
+  
+  <!-- Modern Google Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;600&family=Outfit:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+  
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <div class="background-glow background-glow-1"></div>
+  <div class="background-glow background-glow-2"></div>
+
+  <!-- Header -->
+  <header class="app-header">
+    <div class="header-container">
+      <div class="brand">
+        <div class="brand-icon">
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M12 2v4M12 18v4M4.93 4.93l2.83 2.83M16.24 16.24l2.83 2.83M2 12h4M18 12h4M4.93 19.07l2.83-2.83M16.24 7.76l2.83-2.83"/>
+          </svg>
+        </div>
+        <div>
+          <h1 class="brand-title">NextWord <span>AI</span></h1>
+          <p class="brand-subtitle">Level-1 Language Model & Bigram Visualizer</p>
+        </div>
+      </div>
+
+      <div class="header-badges">
+        <span class="badge badge-accent">Pure Bigram Markov Chain</span>
+        <button id="btn-toggle-guide" class="btn-ghost" aria-label="Toggle ELI5 Guide">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <circle cx="12" cy="12" r="10"/>
+            <path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/>
+            <line x1="12" y1="17" x2="12.01" y2="17"/>
+          </svg>
+          How it Works (ELI5)
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <!-- ELI5 Guide Modal / Banner -->
+  <section id="eli5-guide-panel" class="eli5-panel" style="display: none;">
+    <div class="eli5-card">
+      <div class="eli5-header">
+        <div class="eli5-title-group">
+          <span class="emoji-icon">🧠</span>
+          <h2>How AI Predicts the Next Word (Explain Like I'm 5)</h2>
+        </div>
+        <button id="btn-close-guide" class="close-btn" aria-label="Close Guide">&times;</button>
+      </div>
+
+      <div class="eli5-grid">
+        <div class="eli5-step">
+          <div class="step-num">1</div>
+          <h3>✂️ Tokenize (Scissors)</h3>
+          <p>The computer cuts sentences into individual word stickers (called <strong>tokens</strong>), stripping punctuation and ignoring capital letters.</p>
+        </div>
+        <div class="eli5-step">
+          <div class="step-num">2</div>
+          <h3>📝 Tally Notebook (Bigrams)</h3>
+          <p>Whenever Word A is followed by Word B, it adds a tally mark in its memory: <code>"quick" &rarr; {"brown": 2, "rabbit": 1}</code>.</p>
+        </div>
+        <div class="eli5-step">
+          <div class="step-num">3</div>
+          <h3>🏆 Pick the Winner</h3>
+          <p>When you enter a word, it opens that page and chooses the word with the most votes (or picks with weighted probability).</p>
+        </div>
+        <div class="eli5-step">
+          <div class="step-num">4</div>
+          <h3>🔗 Build the Sentence</h3>
+          <p>It repeats this step 5 times in a row, chaining predictions together to create a brand new sentence!</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Main Content Layout -->
+  <main class="main-container">
+    <!-- Left Column: Training Corpus & Generator Controls -->
+    <section class="column left-column">
+      
+      <!-- Card 1: Corpus Training Panel -->
+      <article class="glass-card corpus-card">
+        <div class="card-header">
+          <div class="card-title-group">
+            <span class="card-icon">📖</span>
+            <div class="card-title-text">
+              <h2>Training Text (Corpus)</h2>
+              <p>The text your model learns from. Edit it or choose a preset.</p>
+            </div>
+          </div>
+          <div class="preset-selector">
+            <span class="preset-label">Presets:</span>
+            <button class="preset-btn active" data-preset="animals" id="preset-animals">🦊 Animals</button>
+            <button class="preset-btn" data-preset="space" id="preset-space">🚀 Sci-Fi</button>
+            <button class="preset-btn" data-preset="coding" id="preset-coding">💻 Dev Life</button>
+          </div>
+        </div>
+
+        <div class="textarea-wrapper">
+          <textarea id="corpus-input" spellcheck="false" placeholder="Enter training sentences here..."></textarea>
+        </div>
+
+        <!-- Live Statistics Bar -->
+        <div class="stats-bar">
+          <div class="stat-item">
+            <span class="stat-label">Total Tokens</span>
+            <span class="stat-value" id="stat-tokens">0</span>
+          </div>
+          <div class="stat-divider"></div>
+          <div class="stat-item">
+            <span class="stat-label">Vocabulary Size</span>
+            <span class="stat-value" id="stat-vocab">0</span>
+          </div>
+          <div class="stat-divider"></div>
+          <div class="stat-item">
+            <span class="stat-label">Bigram Transitions</span>
+            <span class="stat-value" id="stat-transitions">0</span>
+          </div>
+          <button id="btn-retrain" class="btn-sm btn-primary">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M21.5 2v6h-6M2.5 22v-6h6M2 11.5a10 10 0 0 1 18.8-4.3M22 12.5a10 10 0 0 1-18.8 4.3"/>
+            </svg>
+            Retrain Model
+          </button>
+        </div>
+      </article>
+
+      <!-- Card 2: Interactive Sentence Generator -->
+      <article class="glass-card generator-card">
+        <div class="card-header">
+          <div class="card-title-group">
+            <span class="card-icon">⚡</span>
+            <div class="card-title-text">
+              <h2>Sentence Generator</h2>
+              <p>Type a starting word to predict and build a sentence.</p>
+            </div>
+          </div>
+        </div>
+
+        <!-- Input Section -->
+        <div class="generator-controls">
+          <div class="input-group">
+            <label for="start-word-input">Starting Word:</label>
+            <div class="input-with-button">
+              <input type="text" id="start-word-input" placeholder="e.g. quick, the, sleepy..." autocomplete="off">
+              <button id="btn-generate" class="btn-primary" aria-label="Generate Sentence">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <polygon points="5 3 19 12 5 21 5 3"/>
+                </svg>
+                Generate
+              </button>
+              <button id="btn-step" class="btn-secondary" title="Generate word-by-word with animation">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <polyline points="13 17 18 12 13 7"/>
+                  <polyline points="6 17 11 12 6 7"/>
+                </svg>
+                Step-by-Step
+              </button>
+            </div>
+          </div>
+
+          <!-- Quick Suggested Chips -->
+          <div class="suggestions-container">
+            <span class="suggestions-label">Try clicking:</span>
+            <div id="suggested-chips" class="chips-list"></div>
+          </div>
+
+          <!-- Parameter Sliders -->
+          <div class="tuning-bar">
+            <div class="tuning-item">
+              <div class="tuning-header">
+                <label for="sentence-length-slider">Sentence Length:</label>
+                <span id="sentence-length-val" class="tuning-val">5 words</span>
+              </div>
+              <input type="range" id="sentence-length-slider" min="3" max="15" value="5">
+            </div>
+
+            <div class="tuning-item">
+              <div class="tuning-header">
+                <label for="sampling-strategy">Sampling Strategy:</label>
+              </div>
+              <div class="toggle-group">
+                <button class="toggle-btn active" id="strategy-greedy" data-strategy="greedy">Greedy (Max Votes)</button>
+                <button class="toggle-btn" id="strategy-prob" data-strategy="probabilistic">Creative (Weighted)</button>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Output Box -->
+        <div class="output-container">
+          <div class="output-header">
+            <span class="output-title">Generated Sentence</span>
+            <span id="generation-badge" class="badge badge-success" style="display: none;">Generated</span>
+          </div>
+          <div id="sentence-display" class="sentence-box">
+            <p class="sentence-placeholder">Enter a starting word above and click <strong>Generate</strong>...</p>
+          </div>
+          <div id="generation-steps-flow" class="steps-flow"></div>
+        </div>
+      </article>
+
+    </section>
+
+    <!-- Right Column: Visual Tally Inspector ("Brain") -->
+    <section class="column right-column">
+      <article class="glass-card brain-card">
+        <div class="card-header">
+          <div class="card-title-group">
+            <span class="card-icon">📊</span>
+            <div class="card-title-text">
+              <h2>The Model's Brain (Tally Inspector)</h2>
+              <p>See why each word is chosen based on frequency tallies & probabilities.</p>
+            </div>
+          </div>
+        </div>
+
+        <div class="active-word-banner">
+          <span class="active-label">Active Word:</span>
+          <span id="active-word-tag" class="word-tag-large">-</span>
+        </div>
+
+        <!-- Candidate Next Words Chart -->
+        <div class="candidates-container">
+          <div class="candidates-header">
+            <span>Possible Next Words</span>
+            <span>Votes / Probability</span>
+          </div>
+          <div id="candidates-list" class="candidates-list">
+            <div class="empty-state">
+              <p>Click on any word or generate a sentence to inspect its transition notebook.</p>
+            </div>
+          </div>
+        </div>
+
+        <!-- Educational Callout -->
+        <div class="info-callout">
+          <div class="callout-icon">💡</div>
+          <div class="callout-text">
+            <strong>How Bigram Probability Works:</strong>
+            <p>If "the" is followed by "lazy" 3 times and "quick" 2 times (5 total), then "lazy" has a <code>3 / 5 = 60%</code> chance, and "quick" has a <code>2 / 5 = 40%</code> chance.</p>
+          </div>
+        </div>
+
+        <!-- Full Transition Dictionary Inspector (Collapsible) -->
+        <div class="collapsible-section">
+          <button id="btn-toggle-raw-model" class="collapsible-trigger">
+            <span>🔍 View Raw Dictionary (JSON)</span>
+            <svg class="chevron-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <polyline points="6 9 12 15 18 9"/>
+            </svg>
+          </button>
+          <div id="raw-model-panel" class="collapsible-content" style="display: none;">
+            <pre><code id="raw-model-json">{}</code></pre>
+          </div>
+        </div>
+      </article>
+    </section>
+  </main>
+
+  <footer class="app-footer">
+    <div class="footer-container">
+      <p>NextWord AI &bull; Built with pure HTML, CSS, and JavaScript. Inspired by foundational LLM principles.</p>
+      <div class="footer-links">
+        <a href="sample.txt" target="_blank" rel="noopener">View sample.txt</a>
+        <a href="next_word_predictor.py" target="_blank" rel="noopener">View Python Script</a>
+      </div>
+    </div>
+  </footer>
+
+  <script src="app.js"></script>
+</body>
+</html>
